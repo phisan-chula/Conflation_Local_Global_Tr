@@ -1,0 +1,196 @@
+# PlotMap.py
+import os
+import matplotlib.pyplot as plt
+import geopandas as gpd
+
+def render_map(layers, title, filename_base, targets=None):
+    """
+    Unified high-resolution rendering utility for cadaster layouts with parcel 
+    centroid badges, corner vertex text annotations, and explicit control markers.
+    
+    Parameters:
+        layers (dict): Dictionary mapping string labels to GeoDataFrames.
+                       e.g., {"Aligned Fabric Output": gdf, "Fix Control": gdf_points}
+        title (str): Main display banner title for the generated map sheet.
+        filename_base (str): System file path base without extensions.
+        targets (dict): Optional tracking map of matching ground truth positions.
+    """
+    fig, ax = plt.subplots(figsize=(16, 11), dpi=300)
+    vertex_col = "Vertex_Sequenc"
+    
+    # Track handles for a clean, deduplicated map legend
+    legend_elements = {}
+
+    # Strict Color Palette Styles Configuration
+    style_palette = {
+        "Fix Control": {"color": "#FF0000", "marker": "^", "size": 110, "z": 8, "type": "point"},
+        "Adjusted Vertices": {"color": "#00CEC9", "marker": "o", "size": 35, "z": 5, "type": "point"},
+        
+        # L2 Frameworks styled in Grey
+        "Aligned Fabric Output": {"edge": "#7F8C8D", "fill": "none", "width": 1.2, "z": 3, "type": "poly"},
+        "Warped Fabric Output": {"edge": "#7F8C8D", "fill": "#7F8C8D", "alpha": 0.03, "width": 1.5, "z": 4, "type": "poly"},
+        
+        # L1 Framework styled in pure Red
+        "L1 Framework": {"edge": "#FF0000", "fill": "none", "width": 2.2, "z": 2, "type": "poly"}
+    }
+
+    # Loop through each layer in the incoming dictionary payload
+    for layer_name, gdf in layers.items():
+        if gdf is None or gdf.empty:
+            continue
+
+        # Safely determine the active geometry type of the primary data series
+        geom_type = str(gdf.geometry.iloc[0].geom_type).lower()
+        
+        # Check if the layer contains polygon data that we need to split and label
+        if "polygon" in geom_type:
+            if "Class" in gdf.columns:
+                gdf_l1 = gdf[gdf["Class"] == "L1"]
+                gdf_l2 = gdf[gdf["Class"] == "L2"]
+                
+                # =========================================================================
+                # RENDER L1 PARCELS (RED)
+                # =========================================================================
+                if not gdf_l1.empty:
+                    gdf_l1.plot(ax=ax, facecolor="none", edgecolor="#FF0000", linewidth=2.2, zorder=2)
+                    legend_elements["L1 Framework (Fixed)"] = plt.Line2D([0], [0], color="#FF0000", linewidth=2.2)
+                    
+                    for idx, row in gdf_l1.iterrows():
+                        # A. Core Parcel Centroid Badge
+                        centroid = row["geometry"].centroid
+                        p_id = row.get("id", idx)
+                        ax.text(
+                            centroid.x, centroid.y, 
+                            f"ID: {p_id}\nCLASS: L1", 
+                            fontsize=7, fontweight="bold", color="#B30000",
+                            ha="center", va="center",
+                            bbox=dict(boxstyle="round,pad=0.2", fc="#FFFFFF", ec="#FFCCCC", alpha=0.8, lw=0.5),
+                            zorder=10
+                        )
+                        
+                        # B. Vertex Strings Rendered Directly At Corner Coordinates
+                        v_labels = [v.strip() for v in str(row.get(vertex_col, "")).split(",") if v.strip()]
+                        coords = list(row["geometry"].exterior.coords)[:-1] 
+                        
+                        for label, (cx, cy) in zip(v_labels, coords):
+                            ax.text(
+                                cx, cy, f" {label}", 
+                                fontsize=6, fontweight="bold", color="#D63031",
+                                ha="left", va="bottom", 
+                                zorder=12
+                            )
+                
+                # =========================================================================
+                # RENDER L2 PARCELS (GREY)
+                # =========================================================================
+                if not gdf_l2.empty:
+                    gdf_l2.plot(ax=ax, facecolor="none", edgecolor="#7F8C8D", linewidth=1.2, zorder=3)
+                    legend_elements[layer_name] = plt.Line2D([0], [0], color="#7F8C8D", linewidth=1.2)
+                    
+                    for idx, row in gdf_l2.iterrows():
+                        # A. Core Parcel Centroid Badge
+                        centroid = row["geometry"].centroid
+                        p_id = row.get("id", idx)
+                        ax.text(
+                            centroid.x, centroid.y, 
+                            f"ID: {p_id}\nCLASS: L2", 
+                            fontsize=7, color="#2C3E50",
+                            ha="center", va="center",
+                            bbox=dict(boxstyle="round,pad=0.2", fc="#FFFFFF", ec="#BDC3C7", alpha=0.7, lw=0.5),
+                            zorder=10
+                        )
+                        
+                        # B. Vertex Strings Rendered Directly At Corner Coordinates
+                        v_labels = [v.strip() for v in str(row.get(vertex_col, "")).split(",") if v.strip()]
+                        coords = list(row["geometry"].exterior.coords)[:-1]
+                        
+                        for label, (cx, cy) in zip(v_labels, coords):
+                            ax.text(
+                                cx, cy, f" {label}", 
+                                fontsize=6, color="#2D3436",
+                                ha="left", va="bottom",
+                                zorder=12
+                            )
+                continue
+
+        # Fallback rendering style mapping or explicit standalone point layers
+        style = style_palette.get(layer_name, {
+            "color": "#FF0000", "marker": "^", "size": 110, "z": 8, "type": "point"
+        } if "point" in geom_type else {
+            "edge": "#7F8C8D", "fill": "none", "width": 1.0, "z": 2, "type": "poly"
+        })
+
+        # =========================================================================
+        # BRANCH A: RENDERING POINT LAYERS (Fix Control Forced to Red Triangle)
+        # =========================================================================
+        if "point" in geom_type:
+            # Explicitly force red triangles if layer name matches Fix Control
+            c_color = "#FF0000" if "Fix Control" in layer_name else style.get("color", "red")
+            c_marker = "^" if "Fix Control" in layer_name else style.get("marker", "o")
+            c_size = 110 if "Fix Control" in layer_name else style.get("size", 50)
+            c_zorder = 8 if "Fix Control" in layer_name else style.get("z", 5)
+
+            gdf.plot(
+                ax=ax,
+                color=c_color,
+                marker=c_marker,
+                markersize=c_size,
+                zorder=c_zorder
+            )
+            legend_elements[layer_name] = plt.Line2D(
+                [0], [0], 
+                marker=c_marker, 
+                color='w', 
+                markerfacecolor=c_color, 
+                markersize=11, 
+                linestyle='None'
+            )
+
+        # =========================================================================
+        # BRANCH B: RENDERING FALLBACK POLYGON LAYERS
+        # =========================================================================
+        elif "polygon" in geom_type:
+            fc = style.get("fill", "none")
+            alpha = style.get("alpha", 1.0) if fc != "none" else None
+            
+            gdf.plot(
+                ax=ax,
+                facecolor=fc,
+                edgecolor=style.get("edge", "black"),
+                linewidth=style.get("width", 1.0),
+                zorder=style.get("z", 2),
+                alpha=alpha
+            )
+            legend_elements[layer_name] = plt.Line2D(
+                [0], [0], 
+                color=style.get("edge", "black"), 
+                linewidth=style.get("width", 1.0)
+            )
+
+    # Polish map aesthetics and formatting frames
+    ax.set_title(title, fontsize=14, fontweight="bold", pad=15, color="#2D3436")
+    ax.set_xlabel("Coordinate Grid X Easting (m)", fontsize=10, labelpad=8)
+    ax.set_ylabel("Coordinate Grid Y Northing (m)", fontsize=10, labelpad=8)
+    ax.grid(True, linestyle="--", alpha=0.4, color="#B2BEC3", zorder=1)
+    ax.set_aspect("equal", adjustable="box")
+
+    # Legend box positioned outside on the right margin frame
+    if legend_elements:
+        ax.legend(
+            legend_elements.values(), 
+            legend_elements.keys(), 
+            loc="upper left",
+            bbox_to_anchor=(1.04, 1), 
+            frameon=True, 
+            facecolor="#FFFFFF", 
+            edgecolor="#DFE6E9"
+        )
+
+    plt.tight_layout()
+    
+    png_out = f"{filename_base}.png"
+    svg_out = f"{filename_base}.svg"
+    
+    plt.savefig(png_out, dpi=300, bbox_inches="tight")
+    plt.savefig(svg_out, format="svg", bbox_inches="tight")
+    plt.close(fig)

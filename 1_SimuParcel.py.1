@@ -1,0 +1,262 @@
+# 1_SimuParcel.py
+import argparse
+import os
+import shutil
+import hashlib
+from pathlib import Path
+import numpy as np
+import geopandas as gpd
+from shapely.geometry import Polygon, Point
+import PlotMap  # Dynamic Map Rendering Engine
+
+def parse_toml(file_path):
+    """
+    A lightweight custom parser to extract configurations from the new TOML setup.
+    Guarantees no silent fallbacks if keys or structural blocks are missing.
+    """
+    config = {}
+    current_section = None
+    
+    if not os.path.exists(file_path):
+        print(f"\n[CRITICAL ERROR] Configuration file missing at: {file_path}")
+        print("--> System default fallbacks are disabled. Execution halted.")
+        raise FileNotFoundError(f"Mandatory configuration file not found: {file_path}")
+        
+    print(f"Reading configuration from: {file_path}...")   
+    with open(file_path, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            
+            # Parse sections: [SIMU_PARCEL], [FIX_PARCEL], [FIX_CONTROL]
+            if line.startswith('['):
+                end_idx = line.find(']')
+                if end_idx != -1:
+                    current_section = line[1:end_idx].strip()
+                    if current_section not in config:
+                        config[current_section] = {}
+                    continue
+            
+            # Parse key-value pairs within sections
+            if '=' in line and current_section:
+                key, val = line.split('=', 1)
+                key = key.strip()
+                val = val.split('#')[0].strip()
+                
+                if (key.startswith('"') and key.endswith('"')) or (key.startswith("'") and key.endswith("'")):
+                    key = key[1:-1]
+                
+                if val.startswith('[') and val.endswith(']'):
+                    list_contents = val[1:-1].strip()
+                    if list_contents:
+                        raw_items = [x.strip() for x in list_contents.split(',')]
+                        val_parsed = []
+                        for item in raw_items:
+                            try:
+                                if '.' in item:
+                                    val_parsed.append(float(item))
+                                else:
+                                    val_parsed.append(int(item))
+                            except ValueError:
+                                if (item.startswith('"') and item.endswith('"')) or (item.startswith("'") and item.endswith("'")):
+                                    item = item[1:-1]
+                                val_parsed.append(item)
+                    else:
+                        val_parsed = []
+                else:
+                    if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+                        val_parsed = val[1:-1]
+                    else:
+                        try:
+                            if '.' in val:
+                                val_parsed = float(val)
+                            else:
+                                val_parsed = int(val)
+                        except ValueError:
+                            val_parsed = val
+                            
+                config[current_section][key] = val_parsed
+                
+    return config
+
+def get_node_name(r, c, cols):
+    """
+    Generates a unique, deterministic 3-character name using a base32 alphabet
+    derived from an MD5 hash of the grid coordinates. Guarantees no leading '0'.
+    """
+    node_string = f"node_{r}_{c}_{cols}"
+    md5_hex = hashlib.md5(node_string.encode('utf-8')).hexdigest()
+    hash_int = int(md5_hex, 16)
+    
+    base32_alphabet = "0123456789bcdefghjkmnpqrstuvwxyz"
+    
+    encoded_chars = []
+    while hash_int > 0:
+        hash_int, remainder = divmod(hash_int, 32)
+        encoded_chars.append(base32_alphabet[remainder])
+    
+    encoded_str = "".join(reversed(encoded_chars))
+    clean_str = encoded_str.lstrip('0')
+    
+    if len(clean_str) < 3:
+        clean_str = "b32" + clean_str
+        
+    return clean_str[:3]
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Simulate spatial layouts with contiguous rows and two-row vertical blocks using TOML."
+    )
+    parser.add_argument(
+        "config_file", 
+        type=str, 
+        help="Path to the custom TOML configuration file (e.g., CONFIG/L1x3_CTx1.toml)"
+    )
+    args = parser.parse_args()
+    
+    config = parse_toml(args.config_file)
+    
+    if 'SIMU_PARCEL' not in config:
+        raise KeyError("Missing mandatory [SIMU_PARCEL] configuration block in TOML profile.")
+        
+    parcel_cfg = config['SIMU_PARCEL']
+    default_parcel_class = parcel_cfg['class']  # Baseline typically 'L2'
+    width = float(parcel_cfg['width'])
+    height = float(parcel_cfg['height'])
+    space = float(parcel_cfg['space'])
+    cols = int(parcel_cfg['cols'])
+    rows = int(parcel_cfg['rows'])
+    
+    fix_parcels = config.get('FIX_PARCEL', {})
+    fix_controls = config.get('FIX_CONTROL', {})
+    
+    result_dir = Path('./RESULT')
+    if result_dir.exists():
+        shutil.rmtree(result_dir)
+    result_dir.mkdir(parents=True, exist_ok=True)
+
+    ideal_parcels, measured_parcels = [], []
+    ids, classes, vertex_sequences = [], [], []
+    current_id = 1
+
+    # Loop over row/col configuration dimensions to build out layout matrix grids
+    for r in range(rows):
+        # Calculate vertical spacing multiplier: applies a space gap after every 2 rows
+        space_multiplier = r // 2
+        
+        for c in range(cols):
+            # FIXED: X coordinate is strictly contiguous within the row (no gaps)
+            x_min = c * width
+            
+            # FIXED: Y coordinate keeps row pairs tight, grouping spaces every two rows
+            y_min = (r * height) + (space_multiplier * space)
+            
+            x_max = x_min + width
+            y_max = y_min + height
+            
+            bl_name = get_node_name(r, c, cols)
+            br_name = get_node_name(r, c + 1, cols)
+            tr_name = get_node_name(r + 1, c + 1, cols)
+            tl_name = get_node_name(r + 1, c, cols)
+            v_seq = f"{bl_name},{br_name},{tr_name},{tl_name},{bl_name}"
+            vertex_sequences.append(v_seq)
+            
+            poly_ideal = Polygon([(x_min, y_min), (x_max, y_min), (x_max, y_max), (x_min, y_max)])
+            ideal_parcels.append(poly_ideal)
+            
+            p_id_str = str(current_id)
+            
+            # Dynamic Class Assignment & Override Rules
+            if p_id_str in fix_parcels:
+                # Promote to immutable anchor tier Class L1
+                active_class = "L1"
+                
+                shift_x = float(fix_parcels[p_id_str][0])
+                shift_y = float(fix_parcels[p_id_str][1])
+                print(f"[PROCESS] ID {p_id_str} matched inside [FIX_PARCEL] -> Class OVERRIDE to L1 | Shift Vector: [{shift_x}, {shift_y}]")
+                
+                coords = np.array(poly_ideal.exterior.coords)
+                shifted_coords = [(x + shift_x, y + shift_y) for x, y in coords]
+                poly_measured = Polygon(shifted_coords)
+            else:
+                active_class = default_parcel_class
+                poly_measured = poly_ideal
+                
+            measured_parcels.append(poly_measured)
+            ids.append(current_id)
+            classes.append(active_class)
+            current_id += 1
+
+    # =========================================================================
+    # GLOBAL COORDINATE TRANSLATION PASS (SNAP BOUNDARY TO ORIGIN 0,0)
+    # =========================================================================
+    print("[PROCESS] Running origin boundary snapping verification matrix pass...")
+    all_x, all_y = [], []
+    for poly in measured_parcels:
+        coords = np.array(poly.exterior.coords)
+        all_x.extend(coords[:, 0])
+        all_y.extend(coords[:, 1])
+        
+    global_min_x = min(all_x)
+    global_min_y = min(all_y)
+    
+    print(f"          Detected structural workspace minimum boundary corner: ({global_min_x:.3f}, {global_min_y:.3f})")
+    print(f"          Translating fabric layouts by vector: [{-global_min_x:.3f}, {-global_min_y:.3f}] to baseline at (0,0)")
+
+    # Shift all ideal and measured polygon geometries back to the true base origin bounds
+    snapped_ideal = []
+    for poly in ideal_parcels:
+        coords = np.array(poly.exterior.coords)
+        adjusted_coords = [(x - global_min_x, y - global_min_y) for x, y in coords]
+        snapped_ideal.append(Polygon(adjusted_coords))
+
+    snapped_measured = []
+    for poly in measured_parcels:
+        coords = np.array(poly.exterior.coords)
+        adjusted_coords = [(x - global_min_x, y - global_min_y) for x, y in coords]
+        snapped_measured.append(Polygon(adjusted_coords))
+
+    # Extract target control markers defined in the [FIX_CONTROL] block
+    fix_control_points = []
+    fix_control_ids = []
+    for ctrl_id, coords in fix_controls.items():
+        fix_control_ids.append(ctrl_id)
+        # Shift control points symmetrically to stay synchronized with the mapped cadaster geometries
+        fix_control_points.append(Point(float(coords[0]) - global_min_x, float(coords[1]) - global_min_y))
+
+    # Package structures cleanly into GeoDataFrames
+    gdf_ideal = gpd.GeoDataFrame(
+        {'id': ids, 'Class': classes, 'geometry': snapped_ideal}, 
+        crs="EPSG:32647"
+    )
+    gdf_measured = gpd.GeoDataFrame(
+        {'id': ids, 'Class': classes, 'Vertex_Sequenc': vertex_sequences, 'geometry': snapped_measured}, 
+        crs="EPSG:32647"
+    )
+    gdf_fix_control = gpd.GeoDataFrame(
+        {'id': fix_control_ids, 'geometry': fix_control_points},
+        crs="EPSG:32647"
+    )
+
+    gpkg_path = result_dir / "01_parcel_conflation_sim.gpkg"
+    gdf_ideal.to_file(str(gpkg_path), layer="ideal", driver="GPKG")
+    gdf_measured.to_file(str(gpkg_path), layer="measured", driver="GPKG")
+    gdf_fix_control.to_file(str(gpkg_path), layer="fix_control", driver="GPKG")
+
+    print("[EXPORT] Rendering high-resolution layout map graphics via PlotMap...")
+    map_layers = {
+        "Aligned Fabric Output": gdf_measured
+    }
+    if not gdf_fix_control.empty:
+        map_layers["Fix Control"] = gdf_fix_control
+
+    PlotMap.render_map(
+        layers=map_layers,
+        title="Simulation Layer Workspace Input (Contiguous Rows, Blocks of 2)",
+        filename_base=str(result_dir / "01_simulation_input")
+    )
+    print("[STAGE 1 COMPLETED] Process terminated successfully. Lower-bottom vertex is locked at (0,0).\n")
+
+if __name__ == "__main__":
+    main()
