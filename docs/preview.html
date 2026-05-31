@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stage 4: Topological Vertex Conflation Matrix Dashboard</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e1e4e8;
+            padding-bottom: 15px;
+        }
+        h1 { margin: 0 0 5px 0; font-size: 24px; color: #1a202c; }
+        p { margin: 0; color: #4a5568; font-size: 14px; }
+        
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background-color: #ffffff;
+            border: 1px solid #e1e4e8;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .card-header {
+            background-color: #f8fafc;
+            padding: 12px 15px;
+            border-bottom: 1px solid #e1e4e8;
+            font-weight: 600;
+            font-size: 14px;
+            color: #2d3748;
+        }
+        .card-body {
+            padding: 15px;
+            background-color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+        }
+        .svg-figure {
+            width: 100%;
+            margin: 0;
+            text-align: center;
+        }
+        .vector-frame {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            min-height: 500px;
+            border: none;
+            display: block;
+        }
+        figcaption {
+            margin-top: 8px;
+            font-size: 13px;
+        }
+        figcaption a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        figcaption a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Stage 4 Final Vertex Conflation Inspection Dashboard</h1>
+    <p>Lossless vector verification matrix comparisons: Grid configs vs Warping Strategies vs Weights</p>
+    <p>SVG images are loaded from GitHub raw URLs; each card also links to the corresponding SVG file in the repository.</p>
+</header>
+
+<div class="grid-container">
+
+    <div class="card">
+        <div class="card-header">📊 Configuration: L1x3 | affine | 1</div>
+        <div class="card-body">
+            <figure class="svg-figure">
+                <img class="vector-frame" src="https://raw.githubusercontent.com/phisan-chula/Conflation_Local_Global_Tr/main/RESULT_L1x3_affine_1/04_vertex_conflation_result.svg" alt="RESULT_L1x3_affine_1">
+                <figcaption><a href="https://github.com/phisan-chula/Conflation_Local_Global_Tr/blob/main/RESULT_L1x3_affine_1/04_vertex_conflation_result.svg" target="_blank" rel="noopener">Open SVG on GitHub</a></figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">📊 Configuration: L1x3 | affine | 10000</div>
+        <div class="card-body">
+            <figure class="svg-figure">
+                <img class="vector-frame" src="https://raw.githubusercontent.com/phisan-chula/Conflation_Local_Global_Tr/main/RESULT_L1x3_affine_10000/04_vertex_conflation_result.svg" alt="RESULT_L1x3_affine_10000">
+                <figcaption><a href="https://github.com/phisan-chula/Conflation_Local_Global_Tr/blob/main/RESULT_L1x3_affine_10000/04_vertex_conflation_result.svg" target="_blank" rel="noopener">Open SVG on GitHub</a></figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">📊 Configuration: L1x3 | tps | 1</div>
+        <div class="card-body">
+            <figure class="svg-figure">
+                <img class="vector-frame" src="https://raw.githubusercontent.com/phisan-chula/Conflation_Local_Global_Tr/main/RESULT_L1x3_tps_1/04_vertex_conflation_result.svg" alt="RESULT_L1x3_tps_1">
+                <figcaption><a href="https://github.com/phisan-chula/Conflation_Local_Global_Tr/blob/main/RESULT_L1x3_tps_1/04_vertex_conflation_result.svg" target="_blank" rel="noopener">Open SVG on GitHub</a></figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">📊 Configuration: L1x3 | tps | 10000</div>
+        <div class="card-body">
+            <figure class="svg-figure">
+                <img class="vector-frame" src="https://raw.githubusercontent.com/phisan-chula/Conflation_Local_Global_Tr/main/RESULT_L1x3_tps_10000/04_vertex_conflation_result.svg" alt="RESULT_L1x3_tps_10000">
+                <figcaption><a href="https://github.com/phisan-chula/Conflation_Local_Global_Tr/blob/main/RESULT_L1x3_tps_10000/04_vertex_conflation_result.svg" target="_blank" rel="noopener">Open SVG on GitHub</a></figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">📊 Configuration: L1x3 | CTx1 | affine | 1</div>
+        <div class="card-body">
+            <figure class="svg-figure">
+                <img class="vector-frame" src="https://raw.githubusercontent.com/phisan-chula/Conflation_Local_Global_Tr/main/RESULT_L1x3_CTx1_affine_1/04_vertex_conflation_result.svg" alt="RESULT_L1x3_CTx1_affine_1">
+                <figcaption><a href="https://github.com/phisan-chula/Conflation_Local_Global_Tr/blob/main/RESULT_L1x3_CTx1_affine_1/04_vertex_conflation_result.svg" target="_blank" rel="noopener">Open SVG on GitHub</a></figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">📊 Configuration: L1x3 | CTx1 | affine | 10000</div>
+        <div class="card-body">
+            <figure class="svg-figure">
+                <img class="vector-frame" src="https://raw.githubusercontent.com/phisan-chula/Conflation_Local_Global_Tr/main/RESULT_L1x3_CTx1_affine_10000/04_vertex_conflation_result.svg" alt="RESULT_L1x3_CTx1_affine_10000">
+                <figcaption><a href="https://github.com/phisan-chula/Conflation_Local_Global_Tr/blob/main/RESULT_L1x3_CTx1_affine_10000/04_vertex_conflation_result.svg" target="_blank" rel="noopener">Open SVG on GitHub</a></figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">📊 Configuration: L1x3 | CTx1 | tps | 1</div>
+        <div class="card-body">
+            <figure class="svg-figure">
+                <img class="vector-frame" src="https://raw.githubusercontent.com/phisan-chula/Conflation_Local_Global_Tr/main/RESULT_L1x3_CTx1_tps_1/04_vertex_conflation_result.svg" alt="RESULT_L1x3_CTx1_tps_1">
+                <figcaption><a href="https://github.com/phisan-chula/Conflation_Local_Global_Tr/blob/main/RESULT_L1x3_CTx1_tps_1/04_vertex_conflation_result.svg" target="_blank" rel="noopener">Open SVG on GitHub</a></figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">📊 Configuration: L1x3 | CTx1 | tps | 10000</div>
+        <div class="card-body">
+            <figure class="svg-figure">
+                <img class="vector-frame" src="https://raw.githubusercontent.com/phisan-chula/Conflation_Local_Global_Tr/main/RESULT_L1x3_CTx1_tps_10000/04_vertex_conflation_result.svg" alt="RESULT_L1x3_CTx1_tps_10000">
+                <figcaption><a href="https://github.com/phisan-chula/Conflation_Local_Global_Tr/blob/main/RESULT_L1x3_CTx1_tps_10000/04_vertex_conflation_result.svg" target="_blank" rel="noopener">Open SVG on GitHub</a></figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">📊 Configuration: CTx4 | affine | 1</div>
+        <div class="card-body">
+            <figure class="svg-figure">
+                <img class="vector-frame" src="https://raw.githubusercontent.com/phisan-chula/Conflation_Local_Global_Tr/main/RESULT_CTx4_affine_1/04_vertex_conflation_result.svg" alt="RESULT_CTx4_affine_1">
+                <figcaption><a href="https://github.com/phisan-chula/Conflation_Local_Global_Tr/blob/main/RESULT_CTx4_affine_1/04_vertex_conflation_result.svg" target="_blank" rel="noopener">Open SVG on GitHub</a></figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">📊 Configuration: CTx4 | affine | 10000</div>
+        <div class="card-body">
+            <figure class="svg-figure">
+                <img class="vector-frame" src="https://raw.githubusercontent.com/phisan-chula/Conflation_Local_Global_Tr/main/RESULT_CTx4_affine_10000/04_vertex_conflation_result.svg" alt="RESULT_CTx4_affine_10000">
+                <figcaption><a href="https://github.com/phisan-chula/Conflation_Local_Global_Tr/blob/main/RESULT_CTx4_affine_10000/04_vertex_conflation_result.svg" target="_blank" rel="noopener">Open SVG on GitHub</a></figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">📊 Configuration: CTx4 | tps | 1</div>
+        <div class="card-body">
+            <figure class="svg-figure">
+                <img class="vector-frame" src="https://raw.githubusercontent.com/phisan-chula/Conflation_Local_Global_Tr/main/RESULT_CTx4_tps_1/04_vertex_conflation_result.svg" alt="RESULT_CTx4_tps_1">
+                <figcaption><a href="https://github.com/phisan-chula/Conflation_Local_Global_Tr/blob/main/RESULT_CTx4_tps_1/04_vertex_conflation_result.svg" target="_blank" rel="noopener">Open SVG on GitHub</a></figcaption>
+            </figure>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">📊 Configuration: CTx4 | tps | 10000</div>
+        <div class="card-body">
+            <figure class="svg-figure">
+                <img class="vector-frame" src="https://raw.githubusercontent.com/phisan-chula/Conflation_Local_Global_Tr/main/RESULT_CTx4_tps_10000/04_vertex_conflation_result.svg" alt="RESULT_CTx4_tps_10000">
+                <figcaption><a href="https://github.com/phisan-chula/Conflation_Local_Global_Tr/blob/main/RESULT_CTx4_tps_10000/04_vertex_conflation_result.svg" target="_blank" rel="noopener">Open SVG on GitHub</a></figcaption>
+            </figure>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
