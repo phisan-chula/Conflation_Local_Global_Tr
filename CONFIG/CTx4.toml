@@ -1,0 +1,21 @@
+[SIMU_PARCEL]
+class = "L2"
+width  = 10.0
+height = 20.0
+space = 8.0
+cols   = 10
+rows   = 5
+
+
+[FIX_PARCEL]
+#  "ID    " =  [ shift_x, shift_y ]
+#"1"   = [-3.0, -2.0 ]
+#"15" = [2.0, 2.0 ]
+#"30"  = [+3.0, -1.0 ]
+
+[FIX_CONTROL]
+# vertex_id, fix_x, fix_y
+"100" = [-2.0, -4.0]
+"12j" = [100.0, 20.0 ]
+"106" = [-2.0, 100.0]
+"12r" = [102.0, 120.0]
